@@ -1,0 +1,15 @@
+[submodule "lib/pico-sdk"]
+	path = lib/pico-sdk
+	url = https://github.com/raspberrypi/pico-sdk.git
+[submodule "lib/pico-examples"]
+	path = lib/pico-examples
+	url = https://github.com/raspberrypi/pico-examples.git
+[submodule "lib/ioLibrary_Driver"]
+	path = lib/ioLibrary_Driver
+	url = https://github.com/Wiznet/ioLibrary_Driver.git
+[submodule "lib/FreeRTOS-Kernel"]
+	path = lib/FreeRTOS-Kernel
+	url = https://github.com/raspberrypi/FreeRTOS-Kernel
+[submodule "lib/WIZnet-PICO-C"]
+	path = lib/WIZnet-PICO-C
+	url = https://github.com/WIZnet-ioNIC/WIZnet-PICO-C
