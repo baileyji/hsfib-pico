@@ -13,12 +13,3 @@
 [submodule "lib/WIZnet-PICO-C"]
 	path = lib/WIZnet-PICO-C
 	url = https://github.com/WIZnet-ioNIC/WIZnet-PICO-C
-[submodule "lib/Adafruit_DACX578"]
-	path = lib/Adafruit_DACX578
-	url = https://github.com/adafruit/Adafruit_DACX578
-[submodule "lib/PCAL6416A"]
-	path = lib/PCAL6416A
-	url = https://github.com/BenjamimKrug/PCAL6416A
-[submodule "lib/ADS1x15_PICO"]
-	path = lib/ADS1x15_PICO
-	url = https://github.com/gavinlyonsrepo/ADS1x15_PICO.git
