@@ -5,11 +5,13 @@
 #include "pico/stdlib.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "adc_task.hpp"
-#include "dac_task.hpp"
-#include "pub_task.hpp"
-#include "rep_task.hpp"
+#include "adc_task.h"
+#include "dac_task.h"
+#include "switching_task.h"
+#include "pub_task.h"
+#include "rep_task.h"
 #include "queue.h"
+
 
 #define configENABLE_MPU                        0
 #define configENABLE_TRUSTZONE                  0
@@ -20,6 +22,7 @@
 
 QueueHandle_t pub_queue;
 QueueHandle_t dac_command_queue;
+QueueHandle_t switching_queue;
 
 extern "C" void vApplicationMallocFailedHook() { while (1); }
 extern "C" void vApplicationStackOverflowHook(TaskHandle_t, char*) { while (1); }
@@ -29,7 +32,9 @@ int main() {
 
     pub_queue = xQueueCreate(10, sizeof(char[128]));
     dac_command_queue = xQueueCreate(10, sizeof(char[128]));
+    switching_queue = xQueueCreate(4, sizeof(char[64]));
 
+    xTaskCreate(switching_task, "Switching", 1024, (void*)switching_queue, 1, nullptr);
     xTaskCreate(adc_task, "ADC", 1024, pub_queue, 2, NULL);
     xTaskCreate(dac_task, "DAC", 1024, dac_command_queue, 2, NULL);
     xTaskCreate(pub_task, "PUB", 1024, pub_queue, 1, NULL);

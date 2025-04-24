@@ -1,4 +1,9 @@
+add_subdirectory(pico-dacx578/lib)
+add_subdirectory(pico-ads1x15/lib)
+add_subdirectory(pico-pcal6416a/lib)
+
 # Ethernet
+
 add_library(ETHERNET_FILES STATIC)
 
 target_sources(ETHERNET_FILES PUBLIC
