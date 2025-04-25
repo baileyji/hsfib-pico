@@ -77,13 +77,14 @@ namespace pico_zyre {
 
     class ZyreBeacon {
     public:
-        void start();                          // Initial boot/start logic (e.g. send ENTER)
+        void start(const std::string& name);
         void tick();                           // Call periodically from main loop for housekeeping
         bool receive(Command& out);               // Receive WHISPER from active peer
         void send_reply(const Response& in);    // Respond to last WHISPER from peer
         void send_pub(const PubMessage& pub);  // Broadcast telemetry
     private:
         bool try_receive_on_socket(uint8_t sn, Command& out, uint8_t rx_bufs[SOCKET_COUNT][ZYRE_MAX_RECV_BYTES], size_t rx_len[]);
+        const std::string _name;
     };
 
 } // namespace pico_zyre

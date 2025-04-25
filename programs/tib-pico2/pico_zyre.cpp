@@ -190,10 +190,14 @@ namespace pico_zyre {
             frame.push_back(0x02);  // ZRE_MSG_ENTER
             frame.insert(frame.end(), uuid, uuid + 16);
 
-            const std::string name = "tib-pico2";
-            const std::string endpoint = "tcp://0.0.0.0:5000";
+            uint8_t ip[4] = {0};
+            getIPfromDHCP(ip);
 
-            for (const auto& field : {name, endpoint, std::string("")}) {
+            char endpoint_buf[32];
+            snprintf(endpoint_buf, sizeof(endpoint_buf), "tcp://%d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], PORT_ZRE_TCP);
+            std::string endpoint(endpoint_buf);
+
+            for (const auto& field : {_name, endpoint, std::string("")}) {
                 uint16_t len = field.size();
                 frame.push_back((len >> 8) & 0xFF);
                 frame.push_back(len & 0xFF);
@@ -211,9 +215,10 @@ namespace pico_zyre {
         }
     }
 
-    void ZyreBeacon::start() {
+    void ZyreBeacon::start(const std::string& name) {
         generate_uuid();
         enter_sent = false;
+        _name = name;
     }
 
     void ZyreBeacon::tick() {

@@ -16,7 +16,8 @@
 
 struct HardwareContext {
     // Hardware ownership
-    std::array<Photodiode, 2>* photodiodes;
+    Photodiode* yj_photodiode;
+    Photodiode* hk_photodiode;
     std::array<Attenuator, 6>* attenuators;
     MEMSRouter* router;
 
@@ -24,9 +25,6 @@ struct HardwareContext {
     QueueHandle_t command_in;   // accepts Command
     QueueHandle_t response_out; // produces Message
     QueueHandle_t pub_out;      // produces PubMessage
-
-    // Optional synchronization
-    SemaphoreHandle_t photodiode_lock = nullptr;  // shared access if needed
 };
 
 

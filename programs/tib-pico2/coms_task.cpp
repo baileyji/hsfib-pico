@@ -14,33 +14,29 @@
 #include "dhcp.h"
 #include <string>
 #include <vector>
+#include "hardware_context.h"
 
-#define ZRE_NAME "pico-node"
-#define ZRE_ENDPOINT "tcp://0.0.0.0:5000"  // placeholder
+#define ZRE_NAME "hsfib-tib"
 // -------------------------
 
 
-
-
 void coms_task(void* param) {
-    ComsQueues* queues = static_cast<ComsQueues*>(param);
-    if (!queues) {
-        printf("[coms] Error: queues not provided.\\n");
-        vTaskSuspend(nullptr);
-    }
+    auto* ctx = static_cast<HardwareContext*>(param);
+
 
     pico_zyre::ZyreBeacon beacon;
-    beacon.start();
+    beacon.start(ZRE_NAME);
     beacon.tick();
 
     pico_zyre::Command msg;
     pico_zyre::Response reply;
+    pico_zyre::PubMessage pub;
 
     while (true) {
         // Handle incoming WHISPERs
         if (beacon.receive(msg)) {
-            if (queues->command_in) {
-                if (xQueueSend(queues->command_in, &msg, 0) != pdTRUE) {
+            if (ctx->command_in) {
+                if (xQueueSend(ctx->command_in, &msg, 0) != pdTRUE) {
                     printf("[coms] Warning: command_in queue full.\\n");
                     reply.identity=msg.identity;
                     reply.key=msg.key;
@@ -59,15 +55,12 @@ void coms_task(void* param) {
             }
         }
 
-        // Handle response to send via WHISPER
-        pico_zyre::Response reply;
-        if (queues->response_out && xQueueReceive(queues->response_out, &reply, 0) == pdTRUE) {
+        if (ctx->response_out && xQueueReceive(ctx->response_out, &reply, 0) == pdTRUE) {
             beacon.send_reply(reply);
         }
 
         // Handle outgoing PUBs
-        pico_zyre::PubMessage pub;
-        if (queues->pub_out && xQueueReceive(queues->pub_out, &pub, 0) == pdTRUE) {
+        if (ctx->pub_out && xQueueReceive(ctx->pub_out, &pub, 0) == pdTRUE) {
             beacon.send_pub(pub);
         }
 

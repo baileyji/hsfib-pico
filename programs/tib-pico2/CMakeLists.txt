@@ -1,6 +1,9 @@
 # =========================
 # Project Target
 # =========================
+
+include(FreeRTOS_Kernel_import.cmake)
+
 set(TARGET_NAME tib_pico2)
 
 add_executable(${TARGET_NAME}
@@ -12,7 +15,7 @@ add_executable(${TARGET_NAME}
         pico_zyre.cpp pico_zyre.h
         coms_task.cpp coms_task.h
         executor_task.cpp executor_task.h
-        keys.h
+        mktl_keys.h
         hardware_context.h
 )
 

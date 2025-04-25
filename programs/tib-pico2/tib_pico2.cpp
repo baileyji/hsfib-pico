@@ -26,21 +26,8 @@
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY    16
 
 
-ComsQueues queues;
-
-
-
-// static const CommandEntry dispatch_table[] = {
-//     {"photodiode.0.gain", [](const Command& cmd) {
-//         PhotodiodeCommand pcmd;
-//         pcmd.index = 0;
-//         pcmd.type = (cmd.type == MsgType::SET) ? PhotodiodeCommand::SetGain : PhotodiodeCommand::GetGain;
-//         pcmd.value = cmd.args["gain"];
-//         xQueueSend(photodiode_queue, &pcmd, 0);
-//     }},
-// };
-
-
+#define YJ_PHOTODIODE_CHANNEL 0
+#define HK_PHOTODIODE_CHANNEL 1
 
 int main() {
     stdio_init_all();
@@ -85,10 +72,10 @@ int main() {
         {"sw2", 'A'}
     });
 
+    static SemaphoreHandle_t pd_lock     = xSemaphoreCreateMutex();
+    static Photodiode yj_photodiode = Photodiode(adc, YJ_PHOTODIODE_CHANNEL, pd_lock);
+    static Photodiode hk_photodiode = Photodiode(adc, HK_PHOTODIODE_CHANNEL, pd_lock);
 
-    static std::array<Photodiode, 2> photodiodes = {
-        Photodiode(adc, 0), Photodiode(adc, 1)
-    };
 
     static std::array<Attenuator, 6> attenuators = {
         Attenuator(dac, 0), Attenuator(dac, 1), Attenuator(dac, 2),
@@ -98,17 +85,17 @@ int main() {
     static QueueHandle_t command_queue   = xQueueCreate(10, sizeof(pico_zyre::Command));
     static QueueHandle_t response_queue  = xQueueCreate(10, sizeof(pico_zyre::Response));
     static QueueHandle_t pub_queue       = xQueueCreate(10, sizeof(pico_zyre::PubMessage));
-    static SemaphoreHandle_t pd_lock     = xSemaphoreCreateMutex();
+
 
     static HardwareContext ctx = {
-        .photodiodes = &photodiodes,
+        .yj_photodiode = &yj_photodiode,
+        .hk_photodiode = &hk_photodiode,
         .attenuators = &attenuators,
         .router = &router,
 
         .command_in = command_queue,
         .response_out = response_queue,
         .pub_out = pub_queue,
-        .photodiode_lock = pd_lock,
     };
 
     xTaskCreate(executor_task, "executor", 2048, &ctx, 2, nullptr);

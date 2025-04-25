@@ -1,0 +1,5 @@
+add_subdirectory(dhcp_dns)
+add_subdirectory(sntp)
+add_subdirectory(tcp_server_multi_socket)
+add_subdirectory(udp)
+add_subdirectory(udp_multicast)
