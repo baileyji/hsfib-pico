@@ -2,25 +2,26 @@
 // Created by Jeb Bailey on 4/22/25.
 //
 
-#include "dac_task.h"
+#include "attenuator_task.h"
 #include "dacx578.h"
-#include "VariableAttenuator.h"
+#include "attenuator.h"
 #include <cstring>
 #include <cstdio>
 #include <array>
 
 
 static DacX578 dac(i2c0, 0x47, 12);
-static std::array<VariableAttenuator, 6> attenuators = {
-    VariableAttenuator(dac, 0),
-    VariableAttenuator(dac, 1),
-    VariableAttenuator(dac, 2),
-    VariableAttenuator(dac, 3),
-    VariableAttenuator(dac, 4),
-    VariableAttenuator(dac, 5),
+
+static std::array<Attenuator, 6> attenuators = {
+    Attenuator(dac, 0),
+    Attenuator(dac, 1),
+    Attenuator(dac, 2),
+    Attenuator(dac, 3),
+    Attenuator(dac, 4),
+    Attenuator(dac, 5),
 };
 
-void dac_task(void* param) {
+void attenuator_task(void* param) {
     QueueHandle_t cmd_queue = static_cast<QueueHandle_t>(param);
     dac.begin();
 

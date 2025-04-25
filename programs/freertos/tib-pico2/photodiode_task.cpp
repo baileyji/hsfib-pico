@@ -2,13 +2,13 @@
 // Created by Jeb Bailey on 4/22/25.
 //
 
-#include "adc_task.h"
-#include "Photodiode.h"
+#include "photodiode_task.h"
+#include "photodiode.h"
 #include "pico/stdlib.h"
 #include <cstdio>
 
 
-void adc_task(void *param) {
+void photodiode_task(void *param) {
     QueueHandle_t pub_queue = static_cast<QueueHandle_t>(param);
 
     static PICO_ADS1115 adc;
@@ -25,6 +25,8 @@ void adc_task(void *param) {
         float voltage2 = pd1.read_voltage();
 
         snprintf(msg, sizeof(msg), "{\"channel\":%d,\"voltage\":%.3f}", pd0.channel(), voltage);
+        xQueueSend(pub_queue, &msg, portMAX_DELAY);
+        snprintf(msg, sizeof(msg), "{\"channel\":%d,\"voltage\":%.3f}", pd1.channel(), voltage2);
         xQueueSend(pub_queue, &msg, portMAX_DELAY);
 
         vTaskDelay(pdMS_TO_TICKS(500));

@@ -5,11 +5,11 @@
 #include "pico/stdlib.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "adc_task.h"
-#include "dac_task.h"
+#include "photodiode_task.h"
+#include "attenuator_task.h"
 #include "switching_task.h"
-#include "pub_task.h"
-#include "rep_task.h"
+#include "pico_zyre.h"
+#include "coms_task.h"
 #include "queue.h"
 
 
@@ -20,9 +20,8 @@
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY    16
 
 
-QueueHandle_t pub_queue;
-QueueHandle_t dac_command_queue;
-QueueHandle_t switching_queue;
+ComsQueues queues;
+
 
 extern "C" void vApplicationMallocFailedHook() { while (1); }
 extern "C" void vApplicationStackOverflowHook(TaskHandle_t, char*) { while (1); }
@@ -30,15 +29,15 @@ extern "C" void vApplicationStackOverflowHook(TaskHandle_t, char*) { while (1); 
 int main() {
     stdio_init_all();
 
-    pub_queue = xQueueCreate(10, sizeof(char[128]));
-    dac_command_queue = xQueueCreate(10, sizeof(char[128]));
-    switching_queue = xQueueCreate(4, sizeof(char[64]));
+    queues.pub_out = xQueueCreate(10, sizeof(pico_zyre::PubMessage));
+    queues.command_in = xQueueCreate(10, sizeof(pico_zyre::Message));
+    queues.response_out = xQueueCreate(10, sizeof(pico_zyre::Message));
 
-    xTaskCreate(switching_task, "Switching", 1024, (void*)switching_queue, 1, nullptr);
-    xTaskCreate(adc_task, "ADC", 1024, pub_queue, 2, NULL);
-    xTaskCreate(dac_task, "DAC", 1024, dac_command_queue, 2, NULL);
-    xTaskCreate(pub_task, "PUB", 1024, pub_queue, 1, NULL);
-    xTaskCreate(rep_task, "REP", 1024, dac_command_queue, 1, NULL);
+    xTaskCreate(coms_task, "coms", 1024, &queues, 1, nullptr);
+
+    xTaskCreate(switching_task, "Switching", 1024, queues.command_in, 1, nullptr);
+    xTaskCreate(photodiode_task, "Photodiode", 1024, queues.pub_out, 2, nullptr);
+    xTaskCreate(attenuator_task, "Attenuator", 1024, queues.command_in, 2, nullptr);
 
     vTaskStartScheduler();
     while (true); // Should never reach here

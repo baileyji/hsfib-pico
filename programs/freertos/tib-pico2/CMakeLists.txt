@@ -2,30 +2,42 @@ set(TARGET_NAME tib_pico2)
 
 add_executable(${TARGET_NAME}
         ${TARGET_NAME}.cpp
-        adc_task.cpp
-        adc_task.h
-        Photodiode.cpp
-        Photodiode.h
-        VariableAttenuator.cpp
-        VariableAttenuator.h
-        dac_task.cpp
-        dac_task.h
-        rep_task.cpp
-        rep_task.h
-        zmq_frame.cpp
-        zmq_frame.h
-        pub_task.cpp
-        pub_task.h
+        photodiode_task.cpp
+        photodiode_task.h
+        photodiode.cpp
+        photodiode.h
+        attenuator.cpp
+        attenuator.h
+        attenuator_task.cpp
+        attenuator_task.h
         mems_switching.cpp
         mems_switching.h
         switching_task.cpp
         switching_task.h
+        pico_zyre.cpp
+        pico_zyre.h
+        coms_task.cpp
+        coms_task.h
 )
 
+add_link_options(
+        -Wl,-Map=${TARGET_NAME}.map
+        -Wl,--print-memory-usage
+        -Wl,--cref
+)
+
+find_program(CMAKE_SIZE arm-none-eabi-size)
+
+add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${TARGET_NAME}> ${TARGET_NAME}.bin
+        COMMAND ${CMAKE_SIZE} $<TARGET_FILE:${TARGET_NAME}>
+        COMMENT "Generate binary and show memory usage"
+)
 
 target_include_directories(${TARGET_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/
 )
+
 
 
 target_link_libraries(${TARGET_NAME} PRIVATE
@@ -53,3 +65,5 @@ pico_enable_stdio_usb(${TARGET_NAME} 1)
 pico_enable_stdio_uart(${TARGET_NAME} 0)
 
 pico_add_extra_outputs(${TARGET_NAME})
+
+

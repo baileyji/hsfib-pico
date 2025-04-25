@@ -2,14 +2,14 @@
 // Created by Jeb Bailey on 4/22/25.
 //
 
-#ifndef VARIABLEATTENUATOR_H
-#define VARIABLEATTENUATOR_H
+#ifndef ATTENUATOR_H
+#define ATTENUATOR_H
 
 #include "dacx578.h"
 
-class VariableAttenuator {
+class Attenuator {
 public:
-    VariableAttenuator(DacX578& dac, uint8_t channel);
+    Attenuator(DacX578& dac, uint8_t channel);
     void set(float voltage);
     float get() const;
 
@@ -20,4 +20,4 @@ private:
 };
 
 
-#endif //VARIABLEATTENUATOR_H
+#endif //ATTENUATOR_H

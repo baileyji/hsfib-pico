@@ -25,6 +25,7 @@ bool PCAL6416A::writePin(uint8_t pin, bool level) {
 }
 
 bool PCAL6416A::readPin(uint8_t pin, bool& level) {
+//TODO what does it return if the pin is an output, I don't like that this isn't returning the actual value
   if (pin > 15) return false;
   uint16_t in;
   if (!readRegister(REG_INPUT, in)) return false;

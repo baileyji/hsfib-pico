@@ -2,7 +2,7 @@
 // Created by Jeb Bailey on 4/22/25.
 //
 
-#include "Photodiode.h"
+#include "photodiode.h"
 #include "ads1x15.h"  // From ADS1x15_PICO library
 #include "hardware/i2c.h"
 #include <cmath>
