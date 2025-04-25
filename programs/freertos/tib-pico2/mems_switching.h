@@ -10,6 +10,9 @@
 #include <string>
 #include <unordered_map>
 #include "pcal6416a.h"
+// #include <string_view>
+// #include <utility>
+
 
 class MEMSSwitch {
 public:
@@ -25,30 +28,28 @@ private:
 };
 
 
-
 struct StringPairHash {
-    std::size_t operator()(const std::pair<std::string, std::string>& p) const {
-        return std::hash<std::string>{}(p.first) ^ (std::hash<std::string>{}(p.second) << 1);
+    std::size_t operator()(const std::pair<std::string_view, std::string_view>& p) const {
+        return std::hash<std::string_view>{}(p.first) ^ (std::hash<std::string_view>{}(p.second) << 1);
     }
 };
 
 class MEMSRouter {
 public:
-    MEMSRouter();
+    MEMSRouter(const std::pair<std::string_view, MEMSSwitch*>* switches, size_t count);
 
-    void addSwitch(const std::string& name, MEMSSwitch* sw);
-    void setState(const std::string& name, char state); // 'A' or 'B'
-
-    void defineRoute(const std::string& input, const std::string& output,
-                     const std::vector<std::pair<std::string, char>>& switches);
-    bool route(const std::string& input, const std::string& output);
+    void defineRoute(std::string_view input, std::string_view output,
+                     const std::vector<std::pair<std::string_view, char>>& path);
+    bool setSwitch(std::string_view name, char state);
+    bool route(std::string_view input, std::string_view output);
     std::vector<std::pair<std::string, std::string>> activeRoutes() const;
 
 private:
-    std::unordered_map<std::string, MEMSSwitch*> _switches;
-    std::unordered_map<std::pair<std::string, std::string>,
-                       std::vector<std::pair<std::string, char>>,
+    std::unordered_map<std::string_view, MEMSSwitch*> _switches;
+    std::unordered_map<std::pair<std::string_view, std::string_view>,
+                       std::vector<std::pair<std::string_view, char>>,
                        StringPairHash> _routes;
 };
+
 
 #endif // MEMS_SWITCHING_H

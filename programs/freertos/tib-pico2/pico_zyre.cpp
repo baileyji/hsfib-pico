@@ -14,6 +14,11 @@
 #include <cstring>
 #include <cstdio>
 
+#include <nlohmann/json.hpp>
+#include <cstring>
+
+using nlohmann::json;
+
 namespace pico_zyre {
 
     static bool wait_for_ip() {
@@ -73,7 +78,7 @@ namespace pico_zyre {
         return MsgType::INVALID;
     }
 
-    bool ZyreFramer::decode(const uint8_t* data, size_t len, Message& out, size_t& consumed) {
+    bool ZyreFramer::decode(const uint8_t* data, size_t len, Command& out, size_t& consumed) {
         std::vector<std::string> parts;
         size_t i = 0;
         consumed = 0;
@@ -81,7 +86,7 @@ namespace pico_zyre {
         while (i + 2 <= len) {
             bool more = data[i++] & 0x01;
             uint8_t size = data[i++];
-            if (i + size > len) return false;  // wait for more data
+            if (i + size > len) return false;
             parts.emplace_back(reinterpret_cast<const char*>(&data[i]), size);
             i += size;
             if (!more) break;
@@ -95,13 +100,17 @@ namespace pico_zyre {
         std::memcpy(out.req_id.data(), parts[1].data(), 16);
 
         out.key = parts[2];
-        out.payload = parts[3];
+
+        out.args = json::parse(parts[3], /* callback */ nullptr, /* allow exceptions */ false);
+        if (out.args.is_discarded())
+            return false;
 
         consumed = i;
         return true;
     }
 
-    size_t ZyreFramer::encode(const Message& msg, uint8_t* out_buf, size_t buf_size) {
+
+    size_t ZyreFramer::encode(const Response& msg, uint8_t* out_buf, size_t buf_size) {
         std::vector<std::string> frames;
         frames.push_back(std::string(msgtype_to_string(msg.type)));
 
@@ -225,7 +234,7 @@ namespace pico_zyre {
         maybe_send_enter();
     }
 
-    bool ZyreBeacon::try_receive_on_socket(uint8_t sn, Message& out, uint8_t rx_bufs[SOCKET_COUNT][ZYRE_MAX_RECV_BYTES], size_t rx_len[]) {
+    bool ZyreBeacon::try_receive_on_socket(uint8_t sn, Command& out, uint8_t rx_bufs[SOCKET_COUNT][ZYRE_MAX_RECV_BYTES], size_t rx_len[]) {
         int bytes = recv(sn, &rx_bufs[sn][rx_len[sn]], ZYRE_MAX_RECV_BYTES - rx_len[sn]);
         if (bytes > 0) {
             rx_len[sn] += bytes;
@@ -259,7 +268,7 @@ namespace pico_zyre {
         return false;
     }
 
-    bool ZyreBeacon::receive(Message& out) {
+    bool ZyreBeacon::receive(Command& out) {
         static uint8_t rx_bufs[SOCKET_COUNT][ZYRE_MAX_RECV_BYTES];  // Include overflow socket
         static size_t rx_len[SOCKET_COUNT] = {0};
 
@@ -286,9 +295,13 @@ namespace pico_zyre {
 
         if (getSn_SR(sn) == SOCK_ESTABLISHED) {
             if (try_receive_on_socket(sn, out, rx_bufs, rx_len)) {
-                out.type = MsgType::ERROR;
-                out.payload = R"({"error":"too busy"})";
-                send_reply(out);
+                Response resp;
+                resp.type = MsgType::ERROR;
+                resp.identity=out.identity;
+                resp.key=out.key;
+                resp.req_id=out.req_id;
+                resp.payload = R"({"error":"too busy"})";
+                send_reply(resp);
                 vTaskDelay(pdMS_TO_TICKS(100)); // allow buffer flush
             }
 
@@ -300,7 +313,7 @@ namespace pico_zyre {
         return false;
     }
 
-    void ZyreBeacon::send_reply(const Message& in) {
+    void ZyreBeacon::send_reply(const Response& in) {
         uint8_t sn = in.identity;
 
         if (getSn_SR(sn) != SOCK_ESTABLISHED) {

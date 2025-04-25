@@ -30,6 +30,19 @@ project(${PROJECT_NAME} C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+include(FetchContent)
+
+# Setup FetchContent to download nlohmann/json
+FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.11.2 # pick a stable tag (don't fetch master!)
+        GIT_SHALLOW TRUE
+        SOURCE_DIR ${CMAKE_SOURCE_DIR}/lib/thirdparty/nlohmann_json
+)
+
+FetchContent_MakeAvailable(nlohmann_json)
+
 # Initialize the SDK
 pico_sdk_init()
 

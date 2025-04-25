@@ -17,7 +17,9 @@
 #include <cstdint>
 #include <string>
 #include <array>
-
+#include <nlohmann/json.hpp>
+#include <variant>
+#include <string>
 
 #define ZMQ_MAX_FRAMES 8
 #define ZMQ_MAX_FRAME_SIZE 128
@@ -26,27 +28,46 @@
 
 
 
+using Variant = std::variant<
+    std::monostate, // for unset
+    bool,
+    int,
+    float,
+    std::string
+>;
+
 namespace pico_zyre {
 
     enum class MsgType {
         ACK,
         RESPONSE,
         ERROR,
+        GET,
+        SET,
         INVALID
     };
 
-    struct Message {
+    struct Command {
+        uint8_t identity;  // Socket number
         MsgType type;
         std::array<uint8_t, 16> req_id;
         std::string key;
-        std::string payload;
+        // std::string payload; // raw JSON or compact string
+        nlohmann::json args; // parsed, pre-cast arguments
+    };
+
+    struct Response {
         uint8_t identity;  // Socket number
+        MsgType type;
+        std::array<uint8_t, 16> req_id;
+        std::string key;
+        std::string payload; // JSON result or error text
     };
 
     class ZyreFramer {
     public:
-        static bool decode(const uint8_t* data, size_t len, Message& out, size_t& consumed);
-        static size_t encode(const Message& msg, uint8_t* out_buf, size_t buf_size);
+        static bool decode(const uint8_t* data, size_t len, Command& out, size_t& consumed);
+        static size_t encode(const Response& msg, uint8_t* out_buf, size_t buf_size);
     };
 
     struct PubMessage {
@@ -58,11 +79,11 @@ namespace pico_zyre {
     public:
         void start();                          // Initial boot/start logic (e.g. send ENTER)
         void tick();                           // Call periodically from main loop for housekeeping
-        bool receive(Message& out);               // Receive WHISPER from active peer
-        void send_reply(const Message& in);    // Respond to last WHISPER from peer
+        bool receive(Command& out);               // Receive WHISPER from active peer
+        void send_reply(const Response& in);    // Respond to last WHISPER from peer
         void send_pub(const PubMessage& pub);  // Broadcast telemetry
     private:
-        bool try_receive_on_socket(uint8_t sn, Message& out, uint8_t rx_bufs[SOCKET_COUNT][ZYRE_MAX_RECV_BYTES], size_t rx_len[]);
+        bool try_receive_on_socket(uint8_t sn, Command& out, uint8_t rx_bufs[SOCKET_COUNT][ZYRE_MAX_RECV_BYTES], size_t rx_len[]);
     };
 
 } // namespace pico_zyre

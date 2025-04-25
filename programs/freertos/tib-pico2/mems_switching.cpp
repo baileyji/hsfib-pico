@@ -34,17 +34,18 @@ void MEMSSwitch::pulse(uint8_t pin) {
 }
 
 
-MEMSRouter::MEMSRouter() {}
-
-void MEMSRouter::addSwitch(const std::string& name, MEMSSwitch* sw) {
-    _switches[name] = sw;
+MEMSRouter::MEMSRouter(const std::pair<std::string_view, MEMSSwitch*>* switches, size_t count) {
+    for (size_t i = 0; i < count; ++i) {
+        _switches[switches[i].first] = switches[i].second;
+    }
 }
 
-void MEMSRouter::setState(const std::string& name, char state) {
+
+bool MEMSRouter::setSwitch(std::string_view name, char state) {
     auto it = _switches.find(name);
     if (it == _switches.end()) {
-        printf("MEMS Router: switch '%s' not found\n", name.c_str());
-        return;
+        printf("MEMS Router: switch '%.*s' not found\n", (int)name.length(), name.data());
+        return false;
     }
 
     if (state == 'A') {
@@ -52,26 +53,33 @@ void MEMSRouter::setState(const std::string& name, char state) {
     } else if (state == 'B') {
         it->second->setStateB();
     } else {
-        printf("MEMS Router: invalid state '%c' for '%s'\n", state, name.c_str());
-    }
-}
-
-bool MEMSRouter::route(const std::string& input, const std::string& output) {
-    auto path = _routes.find({input, output});
-    if (path == _routes.end()) {
-        printf("MEMS Router: no route from '%s' to '%s'\n", input.c_str(), output.c_str());
+        printf("MEMS Router: invalid state '%c' for '%.*s'\n", state, (int)name.length(), name.data());
         return false;
-    }
-    for (const auto& [name, state] : path->second) {
-        setState(name, state);
     }
     return true;
 }
 
-void MEMSRouter::defineRoute(const std::string& input, const std::string& output,
-                             const std::vector<std::pair<std::string, char>>& switches) {
-    _routes[{input, output}] = switches;
+bool MEMSRouter::route(std::string_view input, std::string_view output) {
+    auto path = _routes.find({input, output});
+    if (path == _routes.end()) {
+        printf("MEMS Router: no route from '%.*s' to '%.*s'\n",
+            (int)input.length(), input.data(), (int)output.length(), output.data());
+        return false;
+    }
+
+    for (const auto& [name, state] : path->second) {
+        if (!setSwitch(name, state)) {
+            return false;
+        }
+    }
+    return true;
 }
+
+void MEMSRouter::defineRoute(std::string_view input, std::string_view output,
+                              const std::vector<std::pair<std::string_view, char>>& path) {
+    _routes[{input, output}] = path;
+}
+
 
 std::vector<std::pair<std::string, std::string>> MEMSRouter::activeRoutes() const {
     std::vector<std::pair<std::string, std::string>> connections;
@@ -85,7 +93,7 @@ std::vector<std::pair<std::string, std::string>> MEMSRouter::activeRoutes() cons
             }
             // If future state tracking is added, validate it here
         }
-        if (match) connections.push_back(route);
+        if (match) connections.emplace_back(route.first, route.second);
     }
     return connections;
 }

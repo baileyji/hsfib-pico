@@ -33,6 +33,8 @@ PICO_ADS1115::PICO_ADS1115()
 	@param I2CDelay I2C timeout in uS 
 	@return bool :true if successful, otherwise false
 */
+// TODO look at this I2C initialization and see it it is actually sound in the pico ecosystem, also needs to be
+// consistent with the other I2C devices
 bool PICO_ADS1X15::beginADSX(ADSXAddressI2C_e i2c_addr, i2c_inst_t *i2c_type, uint16_t CLKspeed, uint8_t SDApin, uint8_t SCLKpin, uint32_t I2CDelay)
 {
 	_AddresI2C = i2c_addr;
@@ -126,8 +128,9 @@ int16_t PICO_ADS1X15::readADC_SingleEnded(ADSX_AINX_e channel)
 	}
 
 	// Wait for the conversion to complete
-	while (!conversionComplete())
-		;
+	// TODO insert a sleep here for the expected time
+	while (!conversionComplete());
+
 	// Read the conversion results
 	return getLastConversionResults();
 }
@@ -272,6 +275,7 @@ int16_t PICO_ADS1X15::getLastConversionResults()
 	@return :: the ADC reading in voltage.
 	@note :: see data sheet Table 3
 */
+//TODO verify correctness and no loss of accuracy
 float PICO_ADS1X15::computeVolts(int16_t counts)
 {
 	float FullScaleRange;

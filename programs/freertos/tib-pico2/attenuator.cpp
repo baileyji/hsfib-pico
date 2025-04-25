@@ -7,6 +7,10 @@
 #include <algorithm>
 #include <cstdio>
 
+//TODO The attenuators had a non-linear relationship between dB and voltage that we want to calibrate and then
+// then set on dB, not voltage
+
+
 Attenuator::Attenuator(DacX578& dac, uint8_t channel)
     : _dac(dac), _channel(channel), _voltage(0.0f) {}
 

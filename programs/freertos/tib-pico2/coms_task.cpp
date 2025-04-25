@@ -33,7 +33,8 @@ void coms_task(void* param) {
     beacon.start();
     beacon.tick();
 
-    pico_zyre::Message msg, reply;
+    pico_zyre::Command msg;
+    pico_zyre::Response reply;
 
     while (true) {
         // Handle incoming WHISPERs
@@ -41,19 +42,25 @@ void coms_task(void* param) {
             if (queues->command_in) {
                 if (xQueueSend(queues->command_in, &msg, 0) != pdTRUE) {
                     printf("[coms] Warning: command_in queue full.\\n");
-                    msg.payload = "{error: too busy, try again}";
-                    beacon.send_reply(msg);
+                    reply.identity=msg.identity;
+                    reply.key=msg.key;
+                    reply.req_id=msg.req_id;
+                    reply.payload="{error: too busy, try again}";;
+                    reply.type=pico_zyre::MsgType::ERROR;
+                    beacon.send_reply(reply);
                 } else {
                     reply.identity=msg.identity;
                     reply.key=msg.key;
-                    reply.payload="ACK";
-                    beacon.send_reply(msg);
+                    reply.req_id=msg.req_id;
+                    reply.type=pico_zyre::MsgType::ACK;
+                    reply.payload="";
+                    beacon.send_reply(reply);
                 }
             }
         }
 
         // Handle response to send via WHISPER
-        pico_zyre::Message reply;
+        pico_zyre::Response reply;
         if (queues->response_out && xQueueReceive(queues->response_out, &reply, 0) == pdTRUE) {
             beacon.send_reply(reply);
         }
