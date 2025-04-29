@@ -72,10 +72,10 @@ The project is designed to create a **reliable, networked controller** capable o
 |-----------------------|--------------------------------------------------------------------------------------------------|
 | `main.cpp`            | Initializes hardware, tasks, queues, and the shared context object                               |
 | `hardware_context.h`  | Defines the shared `HardwareContext` passed to tasks                                             |
-| `executor_task.cpp`   | Main command dispatcher: acts on inbound mKTL commands and commands the hardware                 |
+| `executor_task.cpp`   | Main command dispatcher: acts on inbound mKTL commands and builds replies                        |
 | `photodiode_task.cpp` | Asynchronously polls photodiode voltages and sends updates via the PUB queue                     |
 | `photodiode.cpp`      | A photodiode object                                                                              |
-| `maiman.cpp`          | A Maiman laser diode object (unwritten)                                                          |
+| `maiman.cpp`          | A Maiman laser diode object                                                                      |
 | `attenuator.cpp`      | An attenuator object                                                                             |
 | `coms_task.cpp`       | Manages Zyre beaconing, incoming WHISPER handling, actually sending ack/replys, and outbound PUB |
 | `pico_zyre.cpp`       | Provides lightweight Zyre protocol support (ENTER broadcast, WHISPER receiving, PUB sending)     |
@@ -94,7 +94,7 @@ The project is designed to create a **reliable, networked controller** capable o
 ### Explicit Developer Instructions:
 
 - **Review major code (`tip-pico2/*`) carefully.**  
-  Each is strongly modular and typically owns its domain of hardware or communication.
+  Each is intended to be (strongly) modular and typically owns its domain of hardware or communication.
 - **The true command and control flow is in `executor_task.cpp`.**  
   New commands, hardware devices, and features must be added by expanding the dispatcher tables there. It is presently unfinished
 - **Device initialization (photodiodes, attenuators, switches) happens in `main.cpp`.**  
@@ -108,7 +108,7 @@ The project is designed to create a **reliable, networked controller** capable o
   Prefixes and suffixes are split for flexibility and clarity.
 - **No C++ exceptions are permitted at runtime.**  
   Any new library usage or parsing must use fail-safe, non-throwing patterns.
-- **Networking is DHCP dynamic.**  
+- **Networking is dynamic with DHCP.**  
   If the Ethernet link is dropped and recovered, DHCP automatically restarts.
 
 If reviewing with an AI or static analysis tool:
@@ -121,15 +121,16 @@ If reviewing with an AI or static analysis tool:
 
 ## 4. Outstanding Tasks and Future Work
 
-| Area | Description                                                                                                                                                                                                                                              |
-|------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Laser Diode Driver Integration** | No current code for RS-485 or laser control tasks. Needs hardware abstraction and basic command parsing.                                                                                                                                                 |
-| **Full Command Dispatch Coverage** | Only a subset of mKTL command space is wired, and that incorrectly. Need to extend `executor_task` for things like system status, laser commands, and calibration writes, persistence of settings to flash, and packaging of results into response JSON. |
-| **EEPROM / Flash Storage** | Settings (e.g., calibration curves) are not persisted across reboots. This needs to be added.                                                                                                                                                            |
-| **Formal Testing** | Unit tests for command parsing, error paths, and hardware failure modes are recommended. No automated tests exist yet.                                                                                                                                   |
-| **Power Management** | No explicit low-power or watchdog behavior implemented yet. Watchdog is a requirement.                                                                                                                                                                   |
-| **Optimization** | Opportunity exists to reduce startup latency and shrink final binary by tuning linker script and trimming unused libraries.                                                                                                                              |
-
+| Area                               | Description                                                                                                                                                                                                                        |
+|------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Laser Diode Driver Integration** | Preliminary work only. status() and config() commands are missing.                                                                                                                                                                 |
+| **Full Command Dispatch Coverage** | Only a subset of mKTL command space is wired. Need to extend `executor_task` for things like system status, laser commands, and calibration writes, persistence of settings to flash, and packaging of results into response JSON. |
+| **EEPROM / Flash Storage**         | Settings (e.g., calibration curves) are not persisted across reboots. This needs to be added.                                                                                                                                      |
+| **SNTP Integration**               | SNTP integration could offer powerful debugging capabilities and should be added.                                                                                                                                                  |
+| **Formal Testing**                 | Unit tests for command parsing, error paths, and hardware failure modes are recommended. No automated tests exist yet.                                                                                                             |
+| **Power Management**               | No explicit low-power or watchdog behavior implemented yet. Watchdog is a requirement.                                                                                                                                             |
+| **Optimization**                   | Opportunity exists to reduce startup latency and shrink final binary by tuning linker script and trimming unused libraries.                                                                                                        |
+| **CMake cleanup**                  | The cmake setup is ok, but could really use some refinement to clean up the integration of the W5500 ioLibrary_driver and either a patch or specific commit.                                                                       |
 ---
 
 # Closing
