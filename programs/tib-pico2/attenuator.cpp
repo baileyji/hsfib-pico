@@ -1,7 +1,6 @@
 //
 // Created by Jeb Bailey on 4/22/25.
 //
-
 #include "attenuator.h"
 
 #include <algorithm>
@@ -22,7 +21,6 @@ bool Attenuator::set(float voltage) {
 }
 
 bool Attenuator::get(float &voltage) {
-    //TODO
     uint16_t digital;
     bool success = _dac.readChannel(_channel, digital);
     voltage = float(voltage)/5.0;

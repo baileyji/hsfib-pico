@@ -77,7 +77,8 @@ namespace pico_zyre {
 
     class ZyreBeacon {
     public:
-        void start(const std::string& name);
+        explicit ZyreBeacon(const std::string& name);
+        void start();
         void tick();                           // Call periodically from main loop for housekeeping
         bool receive(Command& out);               // Receive WHISPER from active peer
         void send_reply(const Response& in);    // Respond to last WHISPER from peer

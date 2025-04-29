@@ -182,7 +182,7 @@ namespace pico_zyre {
         DHCP_stop();
     }
 
-    void maybe_send_enter() {
+    void maybe_send_enter(const std::string& name) {
         if (!enter_sent || absolute_time_diff_us(last_enter_time, get_absolute_time()) > ENTER_INTERVAL_S * 1000 * 1000) {
             uint8_t bcast_ip[4] = {255, 255, 255, 255};
 
@@ -197,7 +197,7 @@ namespace pico_zyre {
             snprintf(endpoint_buf, sizeof(endpoint_buf), "tcp://%d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], PORT_ZRE_TCP);
             std::string endpoint(endpoint_buf);
 
-            for (const auto& field : {_name, endpoint, std::string("")}) {
+            for (const auto& field : {name, endpoint, std::string("")}) {
                 uint16_t len = field.size();
                 frame.push_back((len >> 8) & 0xFF);
                 frame.push_back(len & 0xFF);
@@ -215,10 +215,11 @@ namespace pico_zyre {
         }
     }
 
-    void ZyreBeacon::start(const std::string& name) {
+    ZyreBeacon::ZyreBeacon(const std::string& name) : _name(name) {}
+
+    void ZyreBeacon::start() {
         generate_uuid();
         enter_sent = false;
-        _name = name;
     }
 
     void ZyreBeacon::tick() {
@@ -236,7 +237,7 @@ namespace pico_zyre {
             return;
         }
 
-        maybe_send_enter();
+        maybe_send_enter(_name);
     }
 
     bool ZyreBeacon::try_receive_on_socket(uint8_t sn, Command& out, uint8_t rx_bufs[SOCKET_COUNT][ZYRE_MAX_RECV_BYTES], size_t rx_len[]) {

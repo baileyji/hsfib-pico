@@ -310,7 +310,7 @@ bool MaimanDriver::setDuration(float duration) {
     return writeU16(REG_DURATION, value);
 }
 
-bool MaimanDriver::[startDevice() {
+bool MaimanDriver::startDevice() {
     return writeU16(REG_STATE_OF_DEVICE_COMMAND, MODBUS_START_COMMAND_VALUE);
 }
 

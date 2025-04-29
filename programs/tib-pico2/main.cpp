@@ -269,8 +269,8 @@ int main() {
 
     static HardwareContext ctx = {
         .adc = &adc,
-        .attenuators = &attenuators,
-        .lasers = &lasers,
+        .attenuators = attenuators,
+        .lasers = lasers,
         .router = &router,
 
         .command_in = command_queue,

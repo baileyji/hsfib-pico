@@ -24,8 +24,8 @@ void coms_task(void* param) {
     auto* ctx = static_cast<HardwareContext*>(param);
 
 
-    pico_zyre::ZyreBeacon beacon;
-    beacon.start(ZRE_NAME);
+    pico_zyre::ZyreBeacon beacon=pico_zyre::ZyreBeacon(ZRE_NAME);
+    beacon.start();
     beacon.tick();
 
     pico_zyre::Command msg;
@@ -33,6 +33,9 @@ void coms_task(void* param) {
     pico_zyre::PubMessage pub;
 
     while (true) {
+
+        beacon.tick();
+
         // Handle incoming WHISPERs
         if (beacon.receive(msg)) {
             if (ctx->command_in) {
