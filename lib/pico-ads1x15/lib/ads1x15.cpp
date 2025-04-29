@@ -26,53 +26,29 @@ PICO_ADS1115::PICO_ADS1115()
 /*!
 	@brief Sets up the I2C interface
 	@param i2c_addr enum ADSX_AddressI2C_e : I2C address 8 bit address
-	@param i2c_type i2c_inst_t* : I2C instance of port, IC20 or I2C1
-	@param CLKspeed uint16_t : I2C Bus Clock speed in KHz. see 8.5.1.3 datasheet
-	@param SDApin : I2C Data pin
-	@param SCLKpin: I2C Clock pin
+	@param i2c_type i2c_inst_t*: I2C instance of port, IC20 or I2C1
 	@param I2CDelay I2C timeout in uS 
 	@return bool :true if successful, otherwise false
 */
 // TODO look at this I2C initialization and see it it is actually sound in the pico ecosystem, also needs to be
 // consistent with the other I2C devices
-bool PICO_ADS1X15::beginADSX(ADSXAddressI2C_e i2c_addr, i2c_inst_t *i2c_type, uint16_t CLKspeed, uint8_t SDApin, uint8_t SCLKpin, uint32_t I2CDelay)
+bool PICO_ADS1X15::beginADSX(ADSXAddressI2C_e i2c_addr, i2c_inst_t *i2c_type, uint32_t I2CDelay)
 {
 	_AddresI2C = i2c_addr;
 	_i2c = i2c_type;
-	_SClkPin = SCLKpin;
-	_SDataPin = SDApin;
-	_CLKSpeed = CLKspeed;
 	_ADSX_I2C_DELAY = I2CDelay;
 
 	int ReturnCode = 0;
 	uint8_t rxData = 0;
 
-	// init I2c pins and interface
-	gpio_set_function(_SDataPin, GPIO_FUNC_I2C);
-	gpio_set_function(_SClkPin, GPIO_FUNC_I2C);
-	gpio_pull_up(_SDataPin);
-	gpio_pull_up(_SClkPin);
-	i2c_init(_i2c, _CLKSpeed * 1000);
-
 	// check connection?
 	ReturnCode = i2c_read_timeout_us(_i2c, _AddresI2C, &rxData, 1, false, _ADSX_I2C_DELAY);
 	if (ReturnCode < 1)
 	{ // no bytes read back from device or error issued
-#ifdef ADS_SERIAL_DEBUG
-		printf("1201  PICO_ADS1X15::begin: \r\n");
-		printf("Check Connection, Return code :: %d ,RX data :: %u \r\n", ReturnCode, rxdata);
-#endif
+
 		return false;
 	}
 	return true;
-}
-
-/*! @brief Switch off the  I2C */
-void PICO_ADS1X15::deinitI2C()
-{
-	gpio_set_function(_SDataPin, GPIO_FUNC_NULL);
-	gpio_set_function(_SClkPin, GPIO_FUNC_NULL);
-	i2c_deinit(_i2c);
 }
 
 /*!

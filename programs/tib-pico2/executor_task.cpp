@@ -56,31 +56,102 @@ void send_error(QueueHandle_t& respq, const pico_zyre::Command& cmd, const std::
     xQueueSend(respq, &m, 0);
 }
 
-void handle_set(QueueHandle_t& respq, const pico_zyre::Command& cmd) {
-    if (cmd.key == "attenuator.4.db") {
-        bool success = attenuators[4].set(cmd.args["db"]);
-    }
-    else if (cmd.key == "photodiode.1.gain") {
-        if (photodiodes[1].set_gain(cmd.args["gain"])) {
-            send_response(respq, cmd, "OK");
-        } else {
-            send_error(respq, cmd, "Failed");
-        }
-        return;
-    }
-    else
-        send_error(respq, cmd, "Unknown key");
+std::string fetch_laser_state(MaimanDriver& laser) {
+    float laser.getTecTemperatureMeasured();
+    float laser.getPcbTemperatureMeasured();
+    float laser.getTecTemperatureValue();
+    float laser.getCurrentMeasured();
+    float laser.getFrequency();
+    float laser.getDuration();
+    float laser.getVoltageMeasured();
+    float laser.getCurrentMaxLimit();
+    float laser.getCurrentProtectionThreshold();
+    float laser.getCurrentSetCalibration();
+    float laser.getNtcB25_100Coefficient();
+    float laser.getTecCurrentMeasured();
+    float laser.getTecVoltage();
+    uint16_t laser.getSerialNumber();
+    uint16_t laser.getRawStatus();
+    bool laser.isOperationStarted();
+    bool laser.isCurrentSetInternal();
+    bool laser.isEnableInternal();
+    bool laser.isExternalNtcDenied();
+    bool laser.isInterlockDenied();
 }
 
-std::string handle_get(QueueHandle_t& respq, const pico_zyre::Command& cmd) {
-    if (cmd.key == "attenuator.4.db") {
-        send_response(respq, cmd, std::to_string(attenuators[4].get()));
+void handle_set(HardwareContext* ctx, const pico_zyre::Command& cmd) {
+    bool success;
+
+    if (cmd.key == "atten") {
+        success = ctx->attenuators[4].set(cmd.args["db"]);
     }
-    else if (cmd.key == "photodiode.1.gain") {
-        send_response(respq, cmd, photodiodes[1].gain());
+    else if (cmd.key == "laser") {
+        // TODO handle each of the lasers
+        // TODO hanlde getting level
+        // TODO handle getting config
+        success = ctx->lasers[1].startDevice();
+        success = ctx->lasers[1].setCurrent(cmd.args["current"]);
+    }
+    else if (cmd.key == "switch") {
+        success = ctx->router->route(cmd.args["from"].get<std::string>(), cmd.args["to"].get<std::string>());
+    }
+    else if (cmd.key == "photodiodes") {
+        gpio_write(POWER_PIN, POWER_ON);
+        cxt->send_photodiode_data = true;
+    }
+    else {
+        send_error(ctx->response_out, cmd, "Unknown key");
+        success=false;
+    }
+    if (success) {
+        send_response(ctx->response_out, cmd, "OK");
+    } else {
+        send_error(ctx->response_out, cmd, "Failed");
     }
 
-    send_error(respq, cmd, "Unknown key");
+}
+
+std::string handle_get(HardwareContext* ctx, const pico_zyre::Command& cmd) {
+    bool success;
+
+    if (cmd.key == "atten") {
+        float val=0;
+        success = ctx->attenuators[4].get(val);
+        json_data = "{\"db\":" + std::to_string(val) + "}";
+    }
+    else if (cmd.key == "laser") {
+        // TODO handle each of the lasers
+        // TODO hanlde getting level
+        // TODO handle getting config
+        success = ctx->lasers[1].getCurrent(val);
+        json_data = "{\"current\":" + std::to_string(val) + "}";
+    }
+    else if (cmd.key == mktl_keys::MEMS_ROUTE) {
+        auto routes = ctx->router->activeRoutes();
+        json_data = "{\"routes\":[";
+        for (auto& route : routes) {
+            json_data += "{\"from\":\"" + route.first + "\",\"to\":\"" + route.second + "\"},";
+        }
+        json_data += "]}";
+    }
+    else if (cmd.key == mktl_keys::SYSTEM_STATUS) {
+        //TODO build json with VERSION, power gpio state
+        json_data = "{\"version\":[";
+        for (auto& route : routes) {
+            json_data += "{\"from\":\"" + route.first + "\",\"to\":\"" + route.second + "\"},";
+        }
+        json_data += "]}";
+    }
+    else {
+        send_error(ctx->response_out, cmd, "Unknown key");
+        success=false;
+    }
+    if (success) {
+        send_response(ctx->response_out, cmd, json_data);
+        send_response(ctx->response_out, cmd, "OK");
+    } else {
+        send_error(ctx->response_out, cmd, "Failed");
+    }
 }
 
 
@@ -98,9 +169,9 @@ void executor_task(void *param) {
 
         send_ack(ctx->response_out, cmd);
         if (cmd.type == pico_zyre::MsgType::SET) {
-            handle_set(ctx->response_out, cmd);
+            handle_set(ctx, cmd);
         } else {
-            handle_get(ctx->response_out, cmd);
+            handle_get(ctx, cmd);
         }
 
     }

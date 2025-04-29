@@ -11,14 +11,14 @@
 #include <array>
 #include "photodiode.h"
 #include "attenuator.h"
-#include "semphr.h"
+#include "maiman.h"
 #include "mems_switching.h"
 
 struct HardwareContext {
     // Hardware ownership
-    Photodiode* yj_photodiode;
-    Photodiode* hk_photodiode;
-    std::array<Attenuator, 6>* attenuators;
+    PICO_ADS1115* adc;
+    std::array<Attenuator, 6>& attenuators;
+    std::array<MaimanDriver, 6>& lasers;
     MEMSRouter* router;
 
     // Messaging infrastructure

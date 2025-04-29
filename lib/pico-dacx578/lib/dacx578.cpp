@@ -46,6 +46,16 @@ bool DacX578::setClearCode(DacClearCode code) {
     return i2c_write_blocking(_i2c, _address, buf, 3, false) == 3;
 }
 
+bool DacX578::readChannel(uint8_t channel, uint16_t& value) {
+    //TODO
+    // if (channel > 7 && channel != DACX578_CHANNEL_BROADCAST) return false;
+    // uint8_t buf[3] = { DACX578_CMD_READ | (channel & 0xF), 0x00, 0x00 };
+    // if (i2c_write_blocking(_i2c, _address, buf, 3, true) != 3) return false;
+    // if (i2c_read_blocking(_i2c, _address, buf, 3, false) != 3) return false;
+    // value = (buf[1] << 8) | buf[2];
+    return true;
+}
+
 bool DacX578::commandWrite(uint8_t command, uint16_t value) {
     uint8_t shift = 16 - _resolution;
     value <<= shift;

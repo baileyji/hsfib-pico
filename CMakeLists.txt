@@ -43,6 +43,16 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(nlohmann_json)
 
+FetchContent_Declare(
+        nanomodbus
+        GIT_REPOSITORY https://github.com/debevv/nanoMODBUS
+        GIT_TAG master # or the version you want
+        GIT_SHALLOW TRUE
+        SOURCE_DIR ${CMAKE_SOURCE_DIR}/lib/thirdparty/nanomodbus
+)
+
+FetchContent_MakeAvailable(nanomodbus)
+
 # Initialize the SDK
 pico_sdk_init()
 

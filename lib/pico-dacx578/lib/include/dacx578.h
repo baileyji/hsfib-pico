@@ -33,6 +33,7 @@ public:
   bool writeAndUpdateChannel(uint8_t channel, uint16_t value);
   bool writeAndGlobalUpdateChannel(uint8_t channel, uint16_t value);
   bool setClearCode(DacClearCode code);
+  bool readChannel(uint8_t channel, uint16_t& value);
 
 private:
   bool commandWrite(uint8_t command, uint16_t value);

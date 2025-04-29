@@ -24,9 +24,7 @@ namespace mktl_keys {
     // ====================
     inline constexpr std::string_view PD_YJ_PREFIX        = "yj_diode.";
     inline constexpr std::string_view PD_HK_PREFIX        = "hk_diode.";
-    inline constexpr std::string_view PD_GAIN_SUFFIX      = "gain";
     inline constexpr std::string_view PD_VALUE_SUFFIX     = "value";
-    inline constexpr std::string_view PD_PUBLISH_SUFFIX   = "publish";
 
     // ====================
     // MEMS Switch Keys
@@ -45,6 +43,7 @@ namespace mktl_keys {
     inline constexpr std::string_view LASER_K_2330_PREFIX  = "2330_laser.";
     inline constexpr std::string_view LASER_LEVEL_SUFFIX   = "level";    // 0 = off
     inline constexpr std::string_view LASER_STATUS_SUFFIX  = "status";
+    inline constexpr std::string_view LASER_CONFIG_SUFFIX  = "config";
 
     // ====================
     // General System Keys

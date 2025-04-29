@@ -7,7 +7,7 @@ include(FreeRTOS_Kernel_import.cmake)
 set(TARGET_NAME tib_pico2)
 
 add_executable(${TARGET_NAME}
-        ${TARGET_NAME}.cpp
+        main.cpp
         photodiode_task.cpp photodiode_task.h
         photodiode.cpp photodiode.h
         attenuator.cpp attenuator.h
@@ -17,6 +17,7 @@ add_executable(${TARGET_NAME}
         executor_task.cpp executor_task.h
         mktl_keys.h
         hardware_context.h
+        maiman.cpp maiman.h
 )
 
 # =========================
@@ -50,6 +51,7 @@ target_compile_definitions(${TARGET_NAME} PRIVATE
 # Libraries
 # =========================
 target_link_libraries(${TARGET_NAME} PRIVATE
+        nanomodbus
         pico_async_context_freertos
         pico-ads1x15
         pico-pcal6416a

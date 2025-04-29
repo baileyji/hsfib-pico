@@ -13,8 +13,6 @@ public:
     Photodiode(PICO_ADS1X15& adc, int channel, SemaphoreHandle_t& lock);
     float read_voltage() const;
     int channel() const;
-    float getGain();
-    bool setGain(float gain);
     SemaphoreHandle_t lock;
 
 private:

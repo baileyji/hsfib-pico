@@ -10,8 +10,8 @@
 class Attenuator {
 public:
     Attenuator(DacX578& dac, uint8_t channel);
-    void set(float voltage);
-    float get() const;
+    bool set(float voltage);
+    bool get(float& voltage);
 
 private:
     DacX578& _dac;

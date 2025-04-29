@@ -64,27 +64,29 @@ class PICO_ADS1X15
 		static constexpr uint16_t REG_CONFIG_CQUE_4CONV = 0x0002; /**< Assert ALERT/RDY after four conversions */
 		static constexpr uint16_t REG_CONFIG_CQUE_NONE = 0x0003;	/**< Disable the comparator and put ALERT/RDY in high state (default) */
 
-		// Data Rates for ADS1015
-		static constexpr uint16_t RATE_ADS1015_128SPS = 0x0000;	 /**< 128 samples per second */
-		static constexpr uint16_t RATE_ADS1015_250SPS = 0x0020;	 /**< 250 samples per second */
-		static constexpr uint16_t RATE_ADS1015_490SPS = 0x0040;	 /**< 490 samples per second */
-		static constexpr uint16_t RATE_ADS1015_920SPS = 0x0060;	 /**< 920 samples per second */
-		static constexpr uint16_t RATE_ADS1015_1600SPS = 0x0080; /**< 1600 samples per second (default) */
-		static constexpr uint16_t RATE_ADS1015_2400SPS = 0x00A0; /**< 2400 samples per second */
-		static constexpr uint16_t RATE_ADS1015_3300SPS = 0x00C0; /**< 3300 samples per second */
 
-		// Data Rates for ADS1115
-		static constexpr uint16_t RATE_ADS1115_8SPS = 0x0000;		/**< 8 samples per second */
-		static constexpr uint16_t RATE_ADS1115_16SPS = 0x0020;	/**< 16 samples per second */
-		static constexpr uint16_t RATE_ADS1115_32SPS = 0x0040;	/**< 32 samples per second */
-		static constexpr uint16_t RATE_ADS1115_64SPS = 0x0060;	/**< 64 samples per second */
-		static constexpr uint16_t RATE_ADS1115_128SPS = 0x0080; /**< 128 samples per second (default) */
-		static constexpr uint16_t RATE_ADS1115_250SPS = 0x00A0; /**< 250 samples per second */
-		static constexpr uint16_t RATE_ADS1115_475SPS = 0x00C0; /**< 475 samples per second */
-		static constexpr uint16_t RATE_ADS1115_860SPS = 0x00E0; /**< 860 samples per second */
 	};
 
 public:
+	// Data Rates for ADS1015
+	static constexpr uint16_t RATE_ADS1015_128SPS = 0x0000;	 /**< 128 samples per second */
+	static constexpr uint16_t RATE_ADS1015_250SPS = 0x0020;	 /**< 250 samples per second */
+	static constexpr uint16_t RATE_ADS1015_490SPS = 0x0040;	 /**< 490 samples per second */
+	static constexpr uint16_t RATE_ADS1015_920SPS = 0x0060;	 /**< 920 samples per second */
+	static constexpr uint16_t RATE_ADS1015_1600SPS = 0x0080; /**< 1600 samples per second (default) */
+	static constexpr uint16_t RATE_ADS1015_2400SPS = 0x00A0; /**< 2400 samples per second */
+	static constexpr uint16_t RATE_ADS1015_3300SPS = 0x00C0; /**< 3300 samples per second */
+
+	// Data Rates for ADS1115
+	static constexpr uint16_t RATE_ADS1115_8SPS = 0x0000;		/**< 8 samples per second */
+	static constexpr uint16_t RATE_ADS1115_16SPS = 0x0020;	/**< 16 samples per second */
+	static constexpr uint16_t RATE_ADS1115_32SPS = 0x0040;	/**< 32 samples per second */
+	static constexpr uint16_t RATE_ADS1115_64SPS = 0x0060;	/**< 64 samples per second */
+	static constexpr uint16_t RATE_ADS1115_128SPS = 0x0080; /**< 128 samples per second (default) */
+	static constexpr uint16_t RATE_ADS1115_250SPS = 0x00A0; /**< 250 samples per second */
+	static constexpr uint16_t RATE_ADS1115_475SPS = 0x00C0; /**< 475 samples per second */
+	static constexpr uint16_t RATE_ADS1115_860SPS = 0x00E0; /**< 860 samples per second */
+
 	// === enums ===
 	/*! 8-bit I2C address*/
 	enum ADSXAddressI2C_e : uint8_t
@@ -136,8 +138,7 @@ public:
 	};
 
 	// === Functions ===
-	bool beginADSX(ADSXAddressI2C_e addr, i2c_inst_t *type, uint16_t speed, uint8_t SDA, uint8_t SCLK, uint32_t I2CDelay);
-	void deinitI2C();
+	bool beginADSX(ADSXAddressI2C_e addr, i2c_inst_t *type, uint32_t I2CDelay);
 	void setGain(ADSXGain_e gain);
 	ADSXGain_e getGain();
 	void setDataRate(uint16_t rate);
@@ -163,9 +164,6 @@ protected :
 
 private:
 	i2c_inst_t *_i2c; /**< i2C port number i2c0 or i2c1 */
-	uint8_t _SDataPin; /**< GPIO for I2C data pin */
-	uint8_t _SClkPin;  /**< GPIO for I2C Clock pin */
-	uint16_t _CLKSpeed = 100; /**< I2C bus speed in khz */
 	ADSXAddressI2C_e _AddresI2C = ADSX_ADDRESS_GND;
 	uint8_t _dataBuffer[3];  /**< i2C comms Data buffer  */
 	uint32_t _ADSX_I2C_DELAY = 50000; /**< uS delay , I2C timeout */
