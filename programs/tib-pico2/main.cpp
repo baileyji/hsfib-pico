@@ -279,7 +279,7 @@ int main() {
     };
 
     xTaskCreate(executor_task, "executor", 2048, &ctx, 2, nullptr);
-    xTaskCreate(photodiode_task, "pd", 1024, &ctx, 1, nullptr);
+    xTaskCreate(photodiode_task, "photodiode", 1024, &ctx, 1, nullptr);
     xTaskCreate(coms_task, "coms", 2048, &ctx, 2, nullptr);
 
     vTaskStartScheduler();

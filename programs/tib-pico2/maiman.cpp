@@ -189,12 +189,13 @@ float MaimanDriver::getDuration() {
     return -1.0f;
 }
 
-float MaimanDriver::getCurrent() {
+bool MaimanDriver::getCurrent(float& value) {
     uint16_t raw;
     if (readU16(REG_CURRENT, raw)) {
-        return static_cast<float>(raw) / DIVIDER_CURRENT;
+        value = static_cast<float>(raw) / DIVIDER_CURRENT;
+        return true;
     }
-    return -1.0f;
+    return false;
 }
 
 float MaimanDriver::getVoltageMeasured() {

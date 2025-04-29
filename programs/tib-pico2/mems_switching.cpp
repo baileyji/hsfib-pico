@@ -9,7 +9,7 @@
 
 
 MEMSSwitch::MEMSSwitch(PCAL6416A& gpio, uint8_t pinA, uint8_t pinB)
-    : _gpio(gpio), _pinA(pinA), _pinB(pinB) {
+    : _gpio(gpio), _pinA(pinA), _pinB(pinB), _state('U'){
     _gpio.setPinMode(pinA, true);
     _gpio.setPinMode(pinB, true);
     _gpio.writePin(pinA, false);
@@ -18,10 +18,17 @@ MEMSSwitch::MEMSSwitch(PCAL6416A& gpio, uint8_t pinA, uint8_t pinB)
 
 void MEMSSwitch::setStateA() {
     pulse(_pinA);
+    _state = 'A';
 }
 
 void MEMSSwitch::setStateB() {
     pulse(_pinB);
+    _state = 'B';
+}
+
+bool MEMSSwitch::getState(char& state) {
+    state=_state;
+    return true;
 }
 
 void MEMSSwitch::pulse(uint8_t pin) {
@@ -56,6 +63,18 @@ bool MEMSRouter::setSwitch(std::string_view name, char state) {
         printf("MEMS Router: invalid state '%c' for '%.*s'\n", state, (int)name.length(), name.data());
         return false;
     }
+    return true;
+}
+
+bool MEMSRouter::getSwitch(std::string_view name, char& state) {
+    auto it = _switches.find(name);
+    if (it == _switches.end()) {
+        printf("MEMS Router: switch '%.*s' not found\n", (int)name.length(), name.data());
+        return false;
+    }
+
+    it->second->getState(state);
+
     return true;
 }
 

@@ -6,7 +6,7 @@
 // #include "photodiode.h"
 #include "pico/stdlib.h"
 #include <cstdio>
-#import "mktl_keys.h"
+#include "mktl_keys.h"
 #include "pico_zyre.h"
 #include "FreeRTOS.h"
 #include "hardware_context.h"
@@ -29,24 +29,26 @@ void photodiode_task(void *param) {
     ctx->adc->setDataRate(PICO_ADS1X15::RATE_ADS1115_128SPS);
 
 
+    TickType_t last_wake_time = xTaskGetTickCount();
+    const TickType_t sample_interval = pdMS_TO_TICKS(10); // 100Hz loop rate (10ms period)
+
     while (true) {
-        int16_t yj_voltage, hk_voltage;
+        int16_t voltage;
+        PICO_ADS1X15::ADSXRegConfig_e channel;
+        static bool sample_yj = true;
 
-        ctx->adc->startADCReading(PICO_ADS1X15::ADSXRegConfigMuxSingle_0, PICO_ADS1X15::ADSSingleShotMode);
-        vTaskDelay(pdMS_TO_TICKS(8));  //
-        yj_voltage = ctx->adc->getLastConversionResults();
-        ctx->adc->startADCReading(PICO_ADS1X15::ADSXRegConfigMuxSingle_1, PICO_ADS1X15::ADSSingleShotMode);
-        vTaskDelay(pdMS_TO_TICKS(8));
-        hk_voltage = ctx->adc->getLastConversionResults();
+        channel = sample_yj ? PICO_ADS1X15::ADSXRegConfigMuxSingle_0 : PICO_ADS1X15::ADSXRegConfigMuxSingle_1;
+        ctx->adc->startADCReading(channel, PICO_ADS1X15::ADSSingleShotMode);
+        vTaskDelay(pdMS_TO_TICKS(8)); // Allow ADC conversion time
+        voltage = ctx->adc->getLastConversionResults();
 
-        msg.topic = yj_key;
-        msg.payload = std::to_string(yj_voltage);
+        msg.topic = sample_yj ? yj_key: hk_key;
+        msg.payload = std::to_string(voltage);
         xQueueSend(ctx->pub_out, &msg, portMAX_DELAY);
 
-        msg.topic = hk_key;
-        msg.payload = std::to_string(hk_voltage);
-        xQueueSend(ctx->pub_out, &msg, portMAX_DELAY);
+        sample_yj = !sample_yj; // toggle between channels
 
-        vTaskDelay(pdMS_TO_TICKS(8));
+        // Delay until next expected cycle (10ms later)
+        vTaskDelayUntil(&last_wake_time, sample_interval);
     }
 }

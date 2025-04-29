@@ -1,165 +1,176 @@
-//
-// Created by Jeb Bailey on 4/25/25.
-//
+// executor_task.cpp
 
 #include "executor_task.h"
+#include "hardware_context.h"
 #include "photodiode.h"
 #include "attenuator.h"
-#include "photodiode.h"
 #include "pico/stdlib.h"
 #include "mktl_keys.h"
-#include <cstdio>
-#include <stdexcept>
-
 #include "pico_zyre.h"
-
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 #include "mems_switching.h"
-
-
 #include "dacx578.h"
-#include "attenuator.h"
-#include <cstring>
-#include <cstdio>
+
 #include <array>
-#include "hardware_context.h"
-// #include <string>
-// #include <cstring>
+#include <string_view>
+#include <unordered_map>
+#include <nlohmann/json.hpp>
 
+using pico_zyre::Command;
+using pico_zyre::Response;
+using pico_zyre::MsgType;
 
+inline bool starts_with(std::string_view str, std::string_view prefix) {
+    return str.substr(0, prefix.size()) == prefix;
+}
 
-
-// static const CommandEntry dispatch_table[] = {
-//     {"photodiode.0.gain", [](const Command& cmd) {
-//         PhotodiodeCommand pcmd;
-//         pcmd.index = 0;
-//         pcmd.type = (cmd.type == MsgType::SET) ? PhotodiodeCommand::SetGain : PhotodiodeCommand::GetGain;
-//         pcmd.value = cmd.args["gain"];
-//         xQueueSend(photodiode_queue, &pcmd, 0);
-//     }},
-// };
-
-void send_ack(QueueHandle_t& respq, const pico_zyre::Command& cmd) {
-    pico_zyre::Response m{cmd.identity, pico_zyre::MsgType::ACK, cmd.req_id, cmd.key, "null"};
+void send_ack(QueueHandle_t& respq, const Command& cmd) {
+    Response m{cmd.identity, MsgType::ACK, cmd.req_id, cmd.key, "null"};
     xQueueSend(respq, &m, 0);
 }
 
-void send_response(QueueHandle_t& respq, const pico_zyre::Command& cmd, const std::string& payload) {
-    pico_zyre::Response m{cmd.identity, pico_zyre::MsgType::RESPONSE, cmd.req_id, cmd.key, payload};
+void send_response(QueueHandle_t& respq, const Command& cmd, const std::string& payload) {
+    Response m{cmd.identity, MsgType::RESPONSE, cmd.req_id, cmd.key, payload};
     xQueueSend(respq, &m, 0);
 }
 
-void send_error(QueueHandle_t& respq, const pico_zyre::Command& cmd, const std::string& err) {
-    pico_zyre::Response m{cmd.identity, pico_zyre::MsgType::ERROR, cmd.req_id, cmd.key, "{\"error\":\"" + err + "\"}"};
+void send_error(QueueHandle_t& respq, const Command& cmd, const std::string& err) {
+    Response m{cmd.identity, MsgType::ERROR, cmd.req_id, cmd.key, "{\"error\":\"" + err + "\"}"};
     xQueueSend(respq, &m, 0);
 }
 
-std::string fetch_laser_state(MaimanDriver& laser) {
-    float laser.getTecTemperatureMeasured();
-    float laser.getPcbTemperatureMeasured();
-    float laser.getTecTemperatureValue();
-    float laser.getCurrentMeasured();
-    float laser.getFrequency();
-    float laser.getDuration();
-    float laser.getVoltageMeasured();
-    float laser.getCurrentMaxLimit();
-    float laser.getCurrentProtectionThreshold();
-    float laser.getCurrentSetCalibration();
-    float laser.getNtcB25_100Coefficient();
-    float laser.getTecCurrentMeasured();
-    float laser.getTecVoltage();
-    uint16_t laser.getSerialNumber();
-    uint16_t laser.getRawStatus();
-    bool laser.isOperationStarted();
-    bool laser.isCurrentSetInternal();
-    bool laser.isEnableInternal();
-    bool laser.isExternalNtcDenied();
-    bool laser.isInterlockDenied();
+MaimanDriver* laser_for_key(HardwareContext& hw, std::string_view key) {
+    if (starts_with(key, "1028_laser.")) return &hw.lasers[0];
+    if (starts_with(key, "1270_laser.")) return &hw.lasers[1];
+    if (starts_with(key, "yj1420_laser.")) return &hw.lasers[2];
+    if (starts_with(key, "hk1420_laser.")) return &hw.lasers[3];
+    if (starts_with(key, "1510_laser.")) return &hw.lasers[4];
+    if (starts_with(key, "2330_laser.")) return &hw.lasers[5];
+    return nullptr;
 }
 
-void handle_set(HardwareContext* ctx, const pico_zyre::Command& cmd) {
-    bool success;
-
-    if (cmd.key == "atten") {
-        success = ctx->attenuators[4].set(cmd.args["db"]);
-    }
-    else if (cmd.key == "laser") {
-        // TODO handle each of the lasers
-        // TODO hanlde getting level
-        // TODO handle getting config
-        success = ctx->lasers[1].startDevice();
-        success = ctx->lasers[1].setCurrent(cmd.args["current"]);
-    }
-    else if (cmd.key == "switch") {
-        success = ctx->router->route(cmd.args["from"].get<std::string>(), cmd.args["to"].get<std::string>());
-    }
-    else if (cmd.key == "photodiodes") {
-        gpio_write(POWER_PIN, POWER_ON);
-        cxt->send_photodiode_data = true;
-    }
-    else {
-        send_error(ctx->response_out, cmd, "Unknown key");
-        success=false;
-    }
-    if (success) {
-        send_response(ctx->response_out, cmd, "OK");
-    } else {
-        send_error(ctx->response_out, cmd, "Failed");
-    }
-
+Attenuator* attenuator_for_key(HardwareContext& hw, std::string_view key) {
+    if (starts_with(key, "1028_atten.")) return &hw.attenuators[0];
+    if (starts_with(key, "1270_atten.")) return &hw.attenuators[1];
+    if (starts_with(key, "yj1410_atten.")) return &hw.attenuators[2];
+    if (starts_with(key, "hk1410_atten.")) return &hw.attenuators[3];
+    if (starts_with(key, "1510_atten.")) return &hw.attenuators[4];
+    if (starts_with(key, "2330_atten.")) return &hw.attenuators[5];
+    return nullptr;
 }
 
-std::string handle_get(HardwareContext* ctx, const pico_zyre::Command& cmd) {
-    bool success;
-
-    if (cmd.key == "atten") {
-        float val=0;
-        success = ctx->attenuators[4].get(val);
-        json_data = "{\"db\":" + std::to_string(val) + "}";
+std::string dispatch_get_laser_current(HardwareContext& hw, const Command& cmd) {
+    float value = 0.0f;
+    MaimanDriver* laser = laser_for_key(hw, cmd.key);
+    if (!laser || !laser->getCurrent(value)) {
+        return nlohmann::json({{"error", "Failed to get laser current"}}).dump();
     }
-    else if (cmd.key == "laser") {
-        // TODO handle each of the lasers
-        // TODO hanlde getting level
-        // TODO handle getting config
-        success = ctx->lasers[1].getCurrent(val);
-        json_data = "{\"current\":" + std::to_string(val) + "}";
-    }
-    else if (cmd.key == mktl_keys::MEMS_ROUTE) {
-        auto routes = ctx->router->activeRoutes();
-        json_data = "{\"routes\":[";
-        for (auto& route : routes) {
-            json_data += "{\"from\":\"" + route.first + "\",\"to\":\"" + route.second + "\"},";
-        }
-        json_data += "]}";
-    }
-    else if (cmd.key == mktl_keys::SYSTEM_STATUS) {
-        //TODO build json with VERSION, power gpio state
-        json_data = "{\"version\":[";
-        for (auto& route : routes) {
-            json_data += "{\"from\":\"" + route.first + "\",\"to\":\"" + route.second + "\"},";
-        }
-        json_data += "]}";
-    }
-    else {
-        send_error(ctx->response_out, cmd, "Unknown key");
-        success=false;
-    }
-    if (success) {
-        send_response(ctx->response_out, cmd, json_data);
-        send_response(ctx->response_out, cmd, "OK");
-    } else {
-        send_error(ctx->response_out, cmd, "Failed");
-    }
+    return nlohmann::json({{"value", value}}).dump();
 }
 
+std::string dispatch_set_laser_current(HardwareContext& hw, const Command& cmd) {
+    if (!cmd.args.contains("value") || !cmd.args["value"].is_number()) {
+        return nlohmann::json({{"error", "Invalid set current argument"}}).dump();
+    }
+    MaimanDriver* laser = laser_for_key(hw, cmd.key);
+    if (!laser || !laser->setCurrent(cmd.args["value"].get<float>())) {
+        return nlohmann::json({{"error", "Failed to set laser current"}}).dump();
+    }
+    return nlohmann::json({{"status", "ok"}}).dump();
+}
 
-void executor_task(void *param) {
+std::string dispatch_get_attenuator(HardwareContext& hw, const Command& cmd) {
+    float value = 0.0f;
+    Attenuator* att = attenuator_for_key(hw, cmd.key);
+    if (!att || !att->get(value)) {
+        return nlohmann::json({{"error", "Failed to get attenuator"}}).dump();
+    }
+    return nlohmann::json({{"value", value}}).dump();
+}
 
+std::string dispatch_set_attenuator(HardwareContext& hw, const Command& cmd) {
+    if (!cmd.args.contains("value") || !cmd.args["value"].is_number()) {
+        return nlohmann::json({{"error", "Invalid set attenuator argument"}}).dump();
+    }
+    Attenuator* att = attenuator_for_key(hw, cmd.key);
+    if (!att || !att->set(cmd.args["value"].get<float>())) {
+        return nlohmann::json({{"error", "Failed to set attenuator"}}).dump();
+    }
+    return nlohmann::json({{"status", "ok"}}).dump();
+}
+
+std::string dispatch_get_mems_routes(HardwareContext& hw, const Command& cmd) {
+    auto routes = hw.router->activeRoutes();
+    nlohmann::json j = nlohmann::json::array();
+    for (const auto& [input, output] : routes) {
+        j.push_back({{"input", input}, {"output", output}});
+    }
+    return j.dump();
+}
+
+std::string dispatch_set_mems_route(HardwareContext& hw, const Command& cmd) {
+    if (!cmd.args.contains("input") || !cmd.args.contains("output")) {
+        return nlohmann::json({{"error", "Missing input/output"}}).dump();
+    }
+    if (!hw.router->route(cmd.args["input"].get<std::string_view>(),
+                          cmd.args["output"].get<std::string_view>())) {
+        return nlohmann::json({{"error", "Failed to set route"}}).dump();
+    }
+    return nlohmann::json({{"status", "ok"}}).dump();
+}
+
+std::string dispatch_get_mems_switch(HardwareContext& hw, const Command& cmd) {
+    if (!cmd.args.contains("name") || !cmd.args["name"].is_string()) {
+        return nlohmann::json({{"error", "Missing switch name"}}).dump();
+    }
+    char state = '0';
+    if (!hw.router->getSwitch(cmd.args["name"].get<std::string_view>(), state)) {
+        return nlohmann::json({{"error", "Failed to get switch"}}).dump();
+    }
+    return nlohmann::json({{"state", std::string(1, state)}}).dump();
+}
+
+std::string dispatch_set_mems_switch(HardwareContext& hw, const Command& cmd) {
+    if (!cmd.args.contains("name") || !cmd.args.contains("state")) {
+        return nlohmann::json({{"error", "Missing name/state"}}).dump();
+    }
+    char state = cmd.args["state"].get<std::string>()[0];
+    if (!hw.router->setSwitch(cmd.args["name"].get<std::string_view>(), state)) {
+        return nlohmann::json({{"error", "Failed to set switch"}}).dump();
+    }
+    return nlohmann::json({{"status", "ok"}}).dump();
+}
+
+using DispatcherFunc = std::string(*)(HardwareContext&, const Command&);
+struct CommandEntry {
+    DispatcherFunc get_handler = nullptr;
+    DispatcherFunc set_handler = nullptr;
+};
+
+static const std::unordered_map<std::string_view, CommandEntry> dispatch_table = {
+    { "1028_laser.level",    {dispatch_get_laser_current, dispatch_set_laser_current} },
+    { "1270_laser.level",    {dispatch_get_laser_current, dispatch_set_laser_current} },
+    { "yj1420_laser.level",  {dispatch_get_laser_current, dispatch_set_laser_current} },
+    { "hk1420_laser.level",  {dispatch_get_laser_current, dispatch_set_laser_current} },
+    { "1510_laser.level",    {dispatch_get_laser_current, dispatch_set_laser_current} },
+    { "2330_laser.level",    {dispatch_get_laser_current, dispatch_set_laser_current} },
+
+    { "1028_atten.db",       {dispatch_get_attenuator, dispatch_set_attenuator} },
+    { "1270_atten.db",       {dispatch_get_attenuator, dispatch_set_attenuator} },
+    { "yj1410_atten.db",     {dispatch_get_attenuator, dispatch_set_attenuator} },
+    { "hk1410_atten.db",     {dispatch_get_attenuator, dispatch_set_attenuator} },
+    { "1510_atten.db",       {dispatch_get_attenuator, dispatch_set_attenuator} },
+    { "2330_atten.db",       {dispatch_get_attenuator, dispatch_set_attenuator} },
+
+    { "mems.switch",         {dispatch_get_mems_switch, dispatch_set_mems_switch} },
+    { "mems.route",          {dispatch_get_mems_routes, dispatch_set_mems_route} },
+};
+
+void executor_task(void* param) {
     auto* ctx = static_cast<HardwareContext*>(param);
-
-    vTaskDelay(pdMS_TO_TICKS(100)); // give time for other tasks to init
+    vTaskDelay(pdMS_TO_TICKS(100));
 
     pico_zyre::Command cmd;
 
@@ -168,19 +179,23 @@ void executor_task(void *param) {
             continue;
 
         send_ack(ctx->response_out, cmd);
-        if (cmd.type == pico_zyre::MsgType::SET) {
-            handle_set(ctx, cmd);
-        } else {
-            handle_get(ctx, cmd);
+
+        auto it = dispatch_table.find(cmd.key);
+        if (it == dispatch_table.end()) {
+            send_error(ctx->response_out, cmd, "Unknown key");
+            continue;
         }
 
+        DispatcherFunc func = (cmd.type == MsgType::SET) ?
+                              it->second.set_handler :
+                              it->second.get_handler;
+
+        if (!func) {
+            send_error(ctx->response_out, cmd, "Unsupported operation");
+            continue;
+        }
+
+        std::string result = func(*ctx, cmd);
+        send_response(ctx->response_out, cmd, result);
     }
-
 }
-
-
-
-
-
-
-

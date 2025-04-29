@@ -7,6 +7,7 @@
 
 
 #include "pico_zyre.h"
+#include "FreeRTOS.h"
 #include "queue.h"
 #include <array>
 #include "photodiode.h"

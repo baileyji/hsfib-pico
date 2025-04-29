@@ -19,12 +19,14 @@ public:
     MEMSSwitch(PCAL6416A& gpio, uint8_t pinA, uint8_t pinB);
     void setStateA();
     void setStateB();
+    bool getState(char& state);
 
 private:
     void pulse(uint8_t pin);
     PCAL6416A& _gpio;
     uint8_t _pinA;
     uint8_t _pinB;
+    char _state;
 };
 
 
@@ -41,6 +43,7 @@ public:
     void defineRoute(std::string_view input, std::string_view output,
                      const std::vector<std::pair<std::string_view, char>>& path);
     bool setSwitch(std::string_view name, char state);
+    bool getSwitch(std::string_view name, char& state);
     bool route(std::string_view input, std::string_view output);
     std::vector<std::pair<std::string, std::string>> activeRoutes() const;
 
@@ -49,6 +52,7 @@ private:
     std::unordered_map<std::pair<std::string_view, std::string_view>,
                        std::vector<std::pair<std::string_view, char>>,
                        StringPairHash> _routes;
+
 };
 
 

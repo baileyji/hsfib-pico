@@ -66,7 +66,7 @@ public:
     float getCurrentMeasured();
     float getFrequency();
     float getDuration();
-    float getCurrent();
+    bool getCurrent(float& current);
     float getVoltageMeasured();
     float getCurrentMaxLimit();
     float getCurrentProtectionThreshold();
