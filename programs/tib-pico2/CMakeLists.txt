@@ -18,6 +18,7 @@ add_executable(${TARGET_NAME}
         mktl_keys.h
         hardware_context.h
         maiman.cpp maiman.h
+        log_util.h
 )
 
 # =========================
@@ -62,12 +63,15 @@ target_link_libraries(${TARGET_NAME} PRIVATE
         hardware_clocks
         hardware_dma
         pico_unique_id
-        W5500_FILES
-        ETHERNET_FILES
-        IOLIBRARY_FILES
-        DHCP_FILES
-        DNS_FILES
-        TIMER_FILES
+        w5500-evb-pico2
+        wiznet-dhcp
+        wiznet-dns
+#        W5500_FILES
+#        ETHERNET_FILES
+#        IOLIBRARY_FILES
+#        DHCP_FILES
+#        DNS_FILES
+#        TIMER_FILES
         nlohmann_json::nlohmann_json
 )
 

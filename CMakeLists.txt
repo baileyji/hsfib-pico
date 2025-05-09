@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.13)
 #)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 set(PICO_PLATFORM rp2350)
@@ -26,7 +27,7 @@ if(NOT DEFINED PICO_SDK_PATH)
 endif()
 
 include(pico_sdk_import.cmake)
-pico_sdk_init()
+include(FetchContent)
 
 # Set project name
 set(PROJECT_NAME HISPEC-FIB-PICO2)
@@ -34,7 +35,8 @@ project(${PROJECT_NAME} C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
-include(FetchContent)
+
+pico_sdk_init()
 
 
 # Setup FetchContent to download nlohmann/json
@@ -61,15 +63,15 @@ FetchContent_MakeAvailable(nanomodbus)
 
 
 
-set(WIZNET_DIR ${CMAKE_SOURCE_DIR}/lib/ioLibrary_Driver)
-message(STATUS "WIZNET_DIR = ${WIZNET_DIR}")
-set(PORT_DIR ${CMAKE_SOURCE_DIR}/lib/WIZnet-PICO-C/port)
-message(STATUS "PORT_DIR = ${PORT_DIR}")
-
-if(NOT DEFINED MBEDTLS_DIR)
-    set(MBEDTLS_DIR ${CMAKE_SOURCE_DIR}/lib/pico-sdk/lib/mbedtls)
-    message(STATUS "MBEDTLS_DIR = ${MBEDTLS_DIR}")
-endif()
+#set(WIZNET_DIR ${CMAKE_SOURCE_DIR}/lib/ioLibrary_Driver)
+#message(STATUS "WIZNET_DIR = ${WIZNET_DIR}")
+#set(PORT_DIR ${CMAKE_SOURCE_DIR}/lib/WIZnet-PICO-C/port)
+#message(STATUS "PORT_DIR = ${PORT_DIR}")
+#
+#if(NOT DEFINED MBEDTLS_DIR)
+#    set(MBEDTLS_DIR ${CMAKE_SOURCE_DIR}/lib/pico-sdk/lib/mbedtls)
+#    message(STATUS "MBEDTLS_DIR = ${MBEDTLS_DIR}")
+#endif()
 
 
 # Turn off mbedtls test mode
@@ -84,7 +86,7 @@ add_subdirectory(programs)
 # Add libraries in subdirectories
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib)
 #add_subdirectory(${MBEDTLS_DIR})
-add_subdirectory(${PORT_DIR})
+#add_subdirectory(${PORT_DIR})
 
 
 # Set compile options
