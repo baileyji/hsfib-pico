@@ -37,13 +37,6 @@ bool MaimanDriver::writeU16(uint16_t address, uint16_t value) {
         return false;
     }
 
-    // printf("Writing 2 holding registers at address 26...\n");
-    // uint16_t w_regs[2] = {123, 124};
-    // err = nmbs_write_multiple_registers(&nmbs, 26, 2, w_regs);
-    // if (err != NMBS_ERROR_NONE) {
-    //     printf("Error writing multiple registers: %d\n", err);
-    //     return false;
-    // }
     return true;
 }
 

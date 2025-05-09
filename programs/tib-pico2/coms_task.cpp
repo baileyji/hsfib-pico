@@ -67,7 +67,7 @@ void coms_task(void* param) {
             beacon.send_pub(pub);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(10));  //TODO do we really want to throttle this way?
     }
 }
 

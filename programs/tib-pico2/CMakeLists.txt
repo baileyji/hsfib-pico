@@ -59,7 +59,10 @@ target_link_libraries(${TARGET_NAME} PRIVATE
         FreeRTOS-Kernel-Heap4
         pico_stdlib
         hardware_spi
+        hardware_clocks
         hardware_dma
+        pico_unique_id
+        W5500_FILES
         ETHERNET_FILES
         IOLIBRARY_FILES
         DHCP_FILES
@@ -71,8 +74,8 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 # =========================
 # StdIO (USB/UART)
 # =========================
-pico_enable_stdio_usb(${TARGET_NAME} 1)
-pico_enable_stdio_uart(${TARGET_NAME} 0)
+pico_enable_stdio_usb(${TARGET_NAME} 0)
+pico_enable_stdio_uart(${TARGET_NAME} 1)
 
 # =========================
 # Extra Outputs (bin, hex, uf2)
