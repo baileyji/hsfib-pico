@@ -17,6 +17,8 @@
 #include <nlohmann/json.hpp>
 #include <cstring>
 
+#include "log_util.h"
+
 using nlohmann::json;
 
 namespace pico_zyre {
@@ -26,12 +28,12 @@ namespace pico_zyre {
         for (int i = 0; i < 100; ++i) {
             getIPfromDHCP(ip);
             if (ip[0] != 0 || ip[1] != 0 || ip[2] != 0 || ip[3] != 0) {
-                printf("[coms] IP acquired: %d.%d.%d.%d\\n", ip[0], ip[1], ip[2], ip[3]);
+                SAFE_PRINTF("[coms] IP acquired: %d.%d.%d.%d\\n", ip[0], ip[1], ip[2], ip[3]);
                 return true;
             }
             vTaskDelay(pdMS_TO_TICKS(100));
         }
-        printf("[coms] DHCP timeout. No IP acquired.\\n");
+        SAFE_PRINTF("[coms] DHCP timeout. No IP acquired.\\n");
         return false;
     }
 
@@ -146,6 +148,7 @@ namespace pico_zyre {
     }
 
     void handle_link_down() {
+        SAFE_PRINTF("[zyre] handling link down.\n");
         if (last_link_status) {
             enter_sent = false;
             dhcp_active = false;
@@ -171,19 +174,23 @@ namespace pico_zyre {
 
 
     void start_dhcp() {
+        SAFE_PRINTF("[zyre] Starting DHCP\n");
         DHCP_init(DHCP_SOCKET, dhcp_buf);
         for (int i = 0; i < 100; ++i) {
             if (DHCP_run() == DHCP_IP_LEASED) {
                 dhcp_active = true;
+                SAFE_PRINTF("[zyre] DHCP complete\n");
                 return;
             }
             vTaskDelay(pdMS_TO_TICKS(100));
         }
+        SAFE_PRINTF("[zyre] No lease, stopping DHCP\n");
         DHCP_stop();
     }
 
     void maybe_send_enter(const std::string& name) {
         if (!enter_sent || absolute_time_diff_us(last_enter_time, get_absolute_time()) > ENTER_INTERVAL_S * 1000 * 1000) {
+
             uint8_t bcast_ip[4] = {255, 255, 255, 255};
 
             std::vector<uint8_t> frame;
@@ -203,6 +210,9 @@ namespace pico_zyre {
                 frame.push_back(len & 0xFF);
                 frame.insert(frame.end(), field.begin(), field.end());
             }
+
+
+            SAFE_PRINTF("[zyre] Announcing self on %s\n", endpoint.c_str());
 
             if (!socket_initialized[SOCK_UDP_ZRE]) {
                 socket(SOCK_UDP_ZRE, Sn_MR_UDP, 0, 0);
@@ -229,6 +239,7 @@ namespace pico_zyre {
         }
 
         if (link_restored()) {
+            SAFE_PRINTF("[zyre] link restored.\n");
             dhcp_active = false;
         }
 
@@ -260,10 +271,10 @@ namespace pico_zyre {
             }
 
             if (rx_len[sn] == ZYRE_MAX_RECV_BYTES) {
-                printf("[zyre] Overflow on socket %d, dropping message.\\n", sn);
+                SAFE_PRINTF("[zyre] Overflow on socket %d, dropping message.\\n", sn);
                 rx_len[sn] = 0;
             } else {
-                printf("[zyre] Incomplete or malformed message on socket %d.\\n", sn);
+                SAFE_PRINTF("[zyre] Incomplete or malformed message on socket %d.\\n", sn);
             }
         } else if (getSn_SR(sn) == SOCK_CLOSE_WAIT || getSn_SR(sn) == SOCK_CLOSED) {
             close(sn);
@@ -323,7 +334,7 @@ namespace pico_zyre {
         uint8_t sn = in.identity;
 
         if (getSn_SR(sn) != SOCK_ESTABLISHED) {
-            printf("[zyre] Socket %d not established, dropping reply.\\n", sn);
+            SAFE_PRINTF("[zyre] Socket %d not established, dropping reply.\\n", sn);
             if (getSn_SR(sn) != SOCK_CLOSED) {
                 disconnect(sn);
                 close(sn);
@@ -339,14 +350,14 @@ namespace pico_zyre {
         full_buf[1] = 0x00;
         size_t len = ZyreFramer::encode(in, &full_buf[2], sizeof(full_buf)-2);
         if (len == 0) {
-            printf("[zyre] Failed to encode frame for reply.\\n");
+            SAFE_PRINTF("[zyre] Failed to encode frame for reply.\\n");
             return;
         }
 
         size_t total_len = len + 2;
 
         if (getSn_TX_FSR(sn) < total_len) {
-            printf("[zyre] Socket %d TX full, dropping and resetting.\\n", sn);
+            SAFE_PRINTF("[zyre] Socket %d TX full, dropping and resetting.\\n", sn);
             disconnect(sn);
             close(sn);
             socket(sn, Sn_MR_TCP, PORT_ZRE_TCP, 0);

@@ -19,12 +19,12 @@ void photodiode_task(void *param) {
     std::string yj_key = std::string(mktl_keys::PD_YJ_PREFIX)+std::string(mktl_keys::PD_VALUE_SUFFIX);
     std::string hk_key = std::string(mktl_keys::PD_HK_PREFIX)+std::string(mktl_keys::PD_VALUE_SUFFIX);
 
-    // TODO make sure the address is correct
-    if (!ctx->adc->beginADSX(PICO_ADS1X15::ADSX_ADDRESS_GND, i2c0, 50000)) {
-        printf("ADC Failure \r\n");
-        // hardware_faults.adc = true;
-        while (1) {vTaskDelay(pdMS_TO_TICKS(24));};
-    }
+    // // TODO make sure the address is correct
+    // if (!ctx->adc->beginADSX(PICO_ADS1X15::ADSX_ADDRESS_GND, i2c0, 50000)) {
+    //     printf("ADC Failure \r\n");
+    //     // hardware_faults.adc = true;
+    //     while (1) {vTaskDelay(pdMS_TO_TICKS(24));};
+    // }
     ctx->adc->setGain(PICO_ADS1X15::ADSXGain_TWOTHIRDS);
     ctx->adc->setDataRate(PICO_ADS1X15::RATE_ADS1115_128SPS);
 

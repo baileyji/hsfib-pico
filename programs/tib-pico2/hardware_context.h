@@ -26,6 +26,7 @@ struct HardwareContext {
     QueueHandle_t command_in;   // accepts Command
     QueueHandle_t response_out; // produces Message
     QueueHandle_t pub_out;      // produces PubMessage
+    SemaphoreHandle_t* log_mutex;
 };
 
 

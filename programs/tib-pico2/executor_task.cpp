@@ -18,6 +18,8 @@
 #include <unordered_map>
 #include <nlohmann/json.hpp>
 
+#include "log_util.h"
+
 using pico_zyre::Command;
 using pico_zyre::Response;
 using pico_zyre::MsgType;
@@ -173,6 +175,8 @@ void executor_task(void* param) {
     vTaskDelay(pdMS_TO_TICKS(100));
 
     pico_zyre::Command cmd;
+
+    SAFE_PRINTF("Started executor\n");
 
     while (true) {
         if (xQueueReceive(ctx->command_in, &cmd, portMAX_DELAY) != pdTRUE)

@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include "hardware_context.h"
+#include "log_util.h"
 
 #define ZRE_NAME "hsfib-tib"
 // -------------------------
@@ -23,6 +24,7 @@
 void coms_task(void* param) {
     auto* ctx = static_cast<HardwareContext*>(param);
 
+    SAFE_PRINTF("[coms] Starting coms.\n");
 
     pico_zyre::ZyreBeacon beacon=pico_zyre::ZyreBeacon(ZRE_NAME);
     beacon.start();
@@ -40,7 +42,7 @@ void coms_task(void* param) {
         if (beacon.receive(msg)) {
             if (ctx->command_in) {
                 if (xQueueSend(ctx->command_in, &msg, 0) != pdTRUE) {
-                    printf("[coms] Warning: command_in queue full.\\n");
+                    SAFE_PRINTF("[coms] Warning: command_in queue full.\n");
                     reply.identity=msg.identity;
                     reply.key=msg.key;
                     reply.req_id=msg.req_id;
